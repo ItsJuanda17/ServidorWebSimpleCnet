@@ -22,20 +22,22 @@ final class SolicitudesHttp implements Runnable {
 
     private void proceseSolicitud() throws Exception {
         try (
-            OutputStream out = socket.getOutputStream();
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                OutputStream out = socket.getOutputStream();
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         ) {
-            // Leer la línea de solicitud
             String lineaDeSolicitud = in.readLine();
             System.out.println("Solicitud: " + lineaDeSolicitud);
 
-            // Leer y mostrar los encabezados
+            if (lineaDeSolicitud == null) {
+                System.out.println("Solicitud vacía o conexión cerrada por el cliente");
+                return;
+            }
+
             String linea;
             while ((linea = in.readLine()) != null && !linea.isEmpty()) {
                 System.out.println(linea);
             }
 
-            // Procesar la solicitud HTTP
             StringTokenizer tokens = new StringTokenizer(lineaDeSolicitud);
             String method = tokens.nextToken();
             if (!method.equals("GET")) {
@@ -43,7 +45,7 @@ final class SolicitudesHttp implements Runnable {
                 return;
             }
 
-            String fileName = "." + tokens.nextToken();
+            String fileName = "./ServidorWebSimple" + tokens.nextToken();
             FileInputStream fis = null;
             boolean fileExists = true;
 
@@ -66,12 +68,10 @@ final class SolicitudesHttp implements Runnable {
                 entityBody = "<HTML><HEAD><TITLE>Not Found</TITLE></HEAD><BODY>404 Not Found</BODY></HTML>";
             }
 
-            // Enviar línea de estado y encabezado
             enviarString(statusLine, out);
             enviarString(contentTypeLine, out);
             enviarString(CRLF, out);
 
-            // Enviar el cuerpo del mensaje
             if (fileExists) {
                 enviarArchivo(fis, out);
                 fis.close();
